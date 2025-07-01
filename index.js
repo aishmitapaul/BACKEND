@@ -21,6 +21,13 @@ app.post('/api/summarize', async (req, res) => {
     return res.status(400).json({ error: 'Missing text or API key' });
   }
 
+  // Remove HTML tags
+  function stripHtmlTags(html) {
+    return html.replace(/<[^>]*>/g, '');
+  }
+
+  const cleanText = stripHtmlTags(text);
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
   const body = {
     contents: [
@@ -28,7 +35,7 @@ app.post('/api/summarize', async (req, res) => {
         role: 'user',
         parts: [
           {
-            text: `Summarize the following in 3 concise bullet points:\n\n${text}`
+            text: `Summarize the following in 3 concise bullet points:\n\n${cleanText}`
           }
         ]
       }
@@ -43,9 +50,11 @@ app.post('/api/summarize', async (req, res) => {
     });
 
     const result = await response.json();
+
     const summaryText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!summaryText) {
+      console.error("Gemini API failed:", result);
       return res.status(500).json({ error: 'No summary returned' });
     }
 
@@ -55,6 +64,8 @@ app.post('/api/summarize', async (req, res) => {
     res.status(500).json({ error: 'Summarization failed.' });
   }
 });
+
+
 
 app.post('/api/save-summary', (req, res) => {
   const { title, source, publishedAt, url, summary } = req.body;
