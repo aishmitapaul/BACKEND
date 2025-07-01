@@ -83,7 +83,9 @@ app.get('/api/summaries', (req, res) => {
   res.json(savedSummaries);
 });
 
-
+app.get('/',(req,res)=>{
+  res.send('API is running successful');
+});
 app.listen(PORT, () => {
   console.log(` Server running at http://localhost:${PORT}`);
 });
