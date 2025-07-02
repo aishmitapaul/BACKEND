@@ -13,7 +13,7 @@ app.use(express.json());
 const savedSummaries = [];
 
 
-aapp.post('/api/summarize', async (req, res) => {
+app.post('/api/summarize', async (req, res) => {
   const { text } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
