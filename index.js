@@ -21,7 +21,6 @@ app.post('/api/summarize', async (req, res) => {
     return res.status(400).json({ error: 'Missing text or API key' });
   }
 
-  // Remove HTML tags
   function stripHtmlTags(html) {
     return html.replace(/<[^>]*>/g, '');
   }
@@ -50,11 +49,19 @@ app.post('/api/summarize', async (req, res) => {
     });
 
     const result = await response.json();
+    console.log("Gemini API full response:", JSON.stringify(result, null, 2));
 
-    const summaryText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+    let summaryText = "";
 
-    if (!summaryText) {
-      console.error("Gemini API failed:", result);
+    if (Array.isArray(result?.candidates) && result.candidates.length > 0) {
+      const parts = result.candidates[0]?.content?.parts;
+      if (Array.isArray(parts) && parts.length > 0) {
+        summaryText = parts[0]?.text || "";
+      }
+    }
+
+    if (!summaryText.trim()) {
+      console.error("Gemini API response missing summary:", JSON.stringify(result, null, 2));
       return res.status(500).json({ error: 'No summary returned' });
     }
 
@@ -64,6 +71,7 @@ app.post('/api/summarize', async (req, res) => {
     res.status(500).json({ error: 'Summarization failed.' });
   }
 });
+
 
 
 
