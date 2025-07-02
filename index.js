@@ -13,19 +13,22 @@ app.use(express.json());
 const savedSummaries = [];
 
 
-app.post('/api/summarize', async (req, res) => {
+aapp.post('/api/summarize', async (req, res) => {
   const { text } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!text || !apiKey) {
+    console.error(" Missing text or API key");
     return res.status(400).json({ error: 'Missing text or API key' });
   }
 
+  
   function stripHtmlTags(html) {
     return html.replace(/<[^>]*>/g, '');
   }
 
   const cleanText = stripHtmlTags(text);
+  console.log("📥 Cleaned Text:", cleanText.slice(0, 300)); 
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
   const body = {
@@ -49,29 +52,30 @@ app.post('/api/summarize', async (req, res) => {
     });
 
     const result = await response.json();
-    console.log("Gemini API full response:", JSON.stringify(result, null, 2));
 
-    let summaryText = "";
+    console.log("📤 Gemini Response:\n", JSON.stringify(result, null, 2)); 
 
-    if (Array.isArray(result?.candidates) && result.candidates.length > 0) {
-      const parts = result.candidates[0]?.content?.parts;
-      if (Array.isArray(parts) && parts.length > 0) {
-        summaryText = parts[0]?.text || "";
-      }
+    
+    if (result.error) {
+      console.error("Gemini API Error:", result.error.message || result.error);
+      return res.status(500).json({ error: result.error.message || 'Gemini API error' });
     }
 
-    if (!summaryText.trim()) {
-      console.error("Gemini API response missing summary:", JSON.stringify(result, null, 2));
+    
+    const summaryText = result?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (!summaryText) {
+      console.error(" No summary returned:", JSON.stringify(result, null, 2));
       return res.status(500).json({ error: 'No summary returned' });
     }
 
+    console.log(" Summary:", summaryText);
     res.json({ summary: summaryText });
   } catch (err) {
-    console.error("API Error:", err);
+    console.error("API Request Error:", err);
     res.status(500).json({ error: 'Summarization failed.' });
   }
 });
-
 
 
 
